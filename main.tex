@@ -1,0 +1,130 @@
+% Copyright 2022 the authors.
+
+% to-do items:
+% ------------
+% - Choose a better name than FRIM, for God's sake.
+% - Make illustrative diagrams that show how FROE works and how we are generalizing it.
+% - Write a section about spectral representation.
+
+\documentclass[modern]{aastex631}
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper]{geometry}
+\usepackage{amsmath}
+
+% math macros
+\newcommand{\dd}{\mathrm{d}}
+
+% text and formatting macros
+\addtolength{\topmargin}{-0.5in}
+\addtolength{\textheight}{1.0in}
+\setlength{\parindent}{1.75em}
+\frenchspacing\sloppy\sloppypar\raggedbottom
+
+\shorttitle{flat-relative image models}
+\shortauthors{hogg}
+\begin{document}
+\title{Flat-relative spectrograph image models and full-resolution spectral extraction}
+
+\author{David W. Hogg}
+\affil{Center for Cosmology and Particle Physics, Department of Physics, New York University}
+\affil{Max-Planck-Institut f\"ur Astronomie}
+\affil{Flatiron Institute, a division of the Simons Foundation}
+
+\date{September 2022}
+
+\begin{abstract}\noindent
+    In many astronomical spectroscopy applications, pipelines for one-dimensional spectral extraction are based on the flat-relative optimal extraction (FROE) framework.
+    FROE is not exactly ``optimal'' but it is sensible because it uses empirical calibration data to build a forward (or generative) model for the two-dimensional spectrograph data.
+    Its biggest limitation is that it assumes that the cross-dispersion direction (the line of constant mean wavelength) is always everywhere exactly parallel to one of the detector pixel axes.
+    In this contribution, we generalize FROE to a new model---the flat-relative image model (FRIM)---to relax this assumption; when we relax it we can extract spectra at slightly higher spectroscopic resolution than FROE can achieve in real spectrographs.
+    The cost of these improvements is that, in order to use FRIM, the user must know more about the spectrograph than what's required for FROE.
+    Part of the generalization involves making a continuous (as opposed to discretized) one-dimensional spectral representation;
+    in our continuous representation, spectral shifting and interpolation is exact and lossless.
+    We also produce produce with FRIM a set of tools that can simulate two-dimensional spectrograph images, which have uses beyond spectral extraction.
+\end{abstract}
+
+\keywords{foo --- bar}
+
+\section*{}
+\clearpage
+\section{Introduction}
+
+Here we are interested in spectral extraction or making measurements with two-dimensional spectral images.
+We are going to focus on fiber-fed or other small-aperture spectrographs; we are not solving long-slit or slitless spectroscopy problems.
+We will refer to the spectrograph as ``fiber-fed'' in what follows but we really mean ``no spatial structure to the spot''.
+And we are going to extract the full fiber-fed spectrum, which includes target, sky, and telluric absorption.
+The problem here is not to extract a telluric-corrected, sky-subtracted spectrum.
+It is to extract the spectrum incident on the top of the fiber.
+
+In this fiber-fed approximation, a two-dimensional spectrograph image can be modeled as a (noisy version of) a product of a two-dimensional spectrograph model times a one-dimensional spectral model.
+The spectrograph model is a description of the rate or efficiency or effective area $A(x;\lambda)$ at which incident light of wavelength $\lambda$ illuminates the pixel at two-dimensional detector position $x$.
+The spectral model is a description of the flux density $f_\lambda(\lambda)$ incident on the fiber.
+With these two models in hand, the expectation value for the count rate $\dd C/\dd t$ in each pixel $x$ is
+\begin{equation}\label{eq:Af}
+    \frac{\dd C}{\dd t}(x) = \int A(x;\lambda)\,f_\lambda(\lambda)\,\frac{\lambda}{h\,c}\,\dd\lambda ~,
+\end{equation}
+where the factor of $h\,c/\lambda$ converts from energy units into photon units, and we have assumed that the gain is trivial or unity.
+This is an expectation for the rate; any real image is integrated over time and the detector makes a noisy measurement of that integrated rate.
+The key idea is that the spectrograph image model can be factored into an instrument model $A(x;\lambda)$ and an incident spectral model $f_\lambda(\lambda)$.
+
+Why do you not ever want to work with a complete description of $A(x;\lambda)$?
+This is the mistake that ``spectro-perfectionism'' \cite{sp} makes.
+FROE doesn't make this mistake; we won't make it either.
+Indeed we are very inspired by FROE.. How, why?
+HOGG: Give the update of \eqref{eq:Af} in this new regime.
+
+\section{Spectral representation}
+
+A key decision in any model of a spectrograph is the representation to use for the one-dimensional spectrum incident on the fiber.
+The classic representation---and the representation used in FROE---is a set of fluxes or flux densities at a set of wavelengths, or in a set of disjoint wavelength bins.
+For the generalization we build below, we need a one-dimensional spectral representation that is continuous; that is, we need the spectral representation to specify the spectrum at every (relevant) wavelength, not just at a set of discrete control points.
+
+There are many choices for a continuous representation.
+If we add additional requirements that the representation be linear, use basis functions localized in wavelength, and be easily visualized and interpreted, then a natural continuous basis is a b-spline basis.
+B-splines are [HOGG LOTS OF WORDS HERE].
+HOGG: Were these used in SDSS-Classic?
+
+HOGG: What's the advantage of thinking in terms of a continuous, linear spectral representation? Interpolation, reversibility of interpolation, flexibility of sampling, ease of taking derivatives.
+
+There is one extremely technical point worth mentioning here.
+There is a question of whether the one-dimensional spectral representation is representing the spectrum at high resolution, prior to its projection onto the finite-resolution spectrograph's focal plane, or whether the one-dimensional spectral representation is representing the spectrum at delivered spectrograph resolution.
+Because, in the FROE model, the one-dimensional spectrum directly multiplies the flat image, without additional convolution, the FROE model is effectively a model for the spectrum at the spectrograph resolution.
+In the SP model, the input spectrum is convolved with the full point-spread function at every point in the spectrograph, such that the represented one-dimensional spectrum is (at some points in the algorithm) required to represent the spectrum at extremely high resolution.
+This induces ringing features, which are smoothed away (see, eg, HOGG SOME FIGURE).
+These issues are related to issues that come up in the CLEAN algorithm (CITE) and other deconvolution problems.
+
+Our position is that it is not a good idea to ever attempt to represent the spectrum at any resolution that is significantly higher than what the spectrograph can deliver.
+The reason is that any effective deconvolution of the extracted spectrum will be unstable, and may make the results sensitive to numerical linear-algebra issues.
+Besides, the spectrum at exceedingly high resolution isn't really an observable or testable prediction, at least not for any likely experiment.
+For all these reasons the FRIM one-dimensional spectral representation will always be used to represent the spectrum at spectrograph-delivered resolution, and not ever higher.
+
+HOGG: DO we need to say something about the density of the b-spline control points??
+
+HOGG: An illustrative figure showing what we mean by the basis functions and the continuous representation, and its interpretability.
+
+\section{Spectrograph model}
+
+Different methods for spectral extraction require different amounts of information about the spectrograph, the trace, the wavelength solution, and the point-spread function as a function of wavelength.
+On the minimal side, traditional extraction methods involving summing up counts in the detector only need to know the approximate position and width of the trace, and the wavelengths of control points along that approximate trace.
+On the maximal side, SP requires knowledge of the full spectrograph point-spread function, both in shape and position, at every wavelength that hits the detector.
+FROE lies in-between; it requires knowledge of the wavelengths of control points along the trace, and a high signal-to-noise, matched flat image in which the spectrograph fiber has been illuminated by a (relatively) featureless spectrum but otherwise identically to how the target star illuminates it.
+
+FRIM requires slightly more than FROE, but only very slightly more.
+
+\section{A forward model for a spectral image}
+
+\section{Experiments and results}
+
+\section{Discussion}
+
+\begin{acknowledgments}
+It is a pleasure to thank
+Megan Bedell (Flatiron),
+Mike Blanton (NYU),
+Adam Bolton (NOIRlab),
+Andy Casey (Monash),
+Matt Daunt (NYU),
+and the Astronomical Data Group at the Flatiron Institute for valuable input.
+\end{acknowledgments}
+
+\end{document}
